@@ -22,11 +22,5 @@ class AprotecUser extends Model
     public function companies()
     {
       return $this->hasMany(Company::class);
-    }
-
-    // an aprotec user can have many notifications
-    public function notifications()
-    {
-      return $this->hasMany(AprotecNotification::class);
-    }    
+    }   
 }
