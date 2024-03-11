@@ -86,9 +86,9 @@
                         <input type="number" name="cu_number_suffix" class="form-control" value="{{ $invoice->cu_number_suffix }}">
                       </div>
 
-                      <div class="form-group col-sm-4">
-                        <label for="">Discount</label>
-                        <input type="number" name="discount" step="any" min="0" class="form-control" value="{{ $invoice->discount }}">
+                      <div class="form-group col-sm-6">
+                        <label for="">Open Balance</label>
+                        <input type="number" name="open_balance" class="form-control" value="{{ $invoice->amount_due }}">
                       </div>
                     </div>
 

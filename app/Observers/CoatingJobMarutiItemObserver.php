@@ -165,7 +165,7 @@ class CoatingJobMarutiItemObserver
                 ['reason_id', '=', $coatingJobMarutiItem->coating_job_id],
             ])->first();
 
-            $originalSumAdded = $inventoryLog->sum_added;
+            $originalSumAdded = $inventoryLog->sum_added ?? 0;
 
             $inventoryItem = InventoryItem::find($coatingJobMarutiItem->inventory_item_id);
 
@@ -228,7 +228,7 @@ class CoatingJobMarutiItemObserver
                 ['reason_id', '=', $coatingJobMarutiItem->coating_job_id],
             ])->first();
 
-            $originalSumAdded = $powderLog->sum_added;
+            $originalSumAdded = $powderLog->sum_added ?? 0;
 
             $powder = Powder::find($coatingJobMarutiItem->powder_id);
 

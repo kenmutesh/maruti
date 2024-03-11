@@ -205,17 +205,17 @@ class InvoiceController extends Controller
       $invoice->fill([
         'ext_invoice_prefix' => $request->ext_invoice_prefix,
         'ext_invoice_suffix' => $request->ext_invoice_suffix,
-        'discount' => $request->discount,
         'cu_number_prefix' => $request->cu_number_prefix,
-        'cu_number_suffix' => $request->cu_number_suffix
+        'cu_number_suffix' => $request->cu_number_suffix,
+        'amount_due' => $request->open_balance
       ]);
     } else {
       $invoice->fill([
         'invoice_prefix' => $request->invoice_prefix,
         'invoice_suffix' => $request->invoice_suffix,
-        'discount' => $request->discount,
         'cu_number_prefix' => $request->cu_number_prefix,
-        'cu_number_suffix' => $request->cu_number_suffix
+        'cu_number_suffix' => $request->cu_number_suffix,
+        'amount_due' => $request->open_balance
       ]);
     }
 
@@ -375,12 +375,12 @@ class InvoiceController extends Controller
       if ($request->maruti_direct_item_id[$i] == "" || $request->maruti_direct_item_id[$i] == null) {
         $coatingjobMarutiItem->fill([
           'coating_job_id' => $coatingjob->id,
-          'inventory_item_id' => $request->maruti_item_id[$i],
+          'custom_item_name' => $request->custom_item_name[$i],
           'uom' => strtoupper($request->maruti_item_uom[$i] ?? 'UNITS'),
           'unit_price' => $request->maruti_direct_unit_price[$i] ?? 1,
-          'quantity' => $request->maruti_item_qty[$i] ?? 1,
+          'quantity' => $request->maruti_direct_item_qty[$i] ?? 1,
           'vat' => $request->maruti_item_vat[$i] ?? Tax::where('type', TaxTypesEnum::VAT)->first()->percentage,
-          'vat_inclusive' => ($request->maruti_item_vat_inclusive[$i] == 'Yes') ? 1 : 0
+          'vat_inclusive' => ($request->maruti_direct_vat_inclusive[$i] == 'Yes') ? 1 : 0
         ]);
       } else {
         if ($request->maruti_direct_inventory_type[$i] == "Powder") {

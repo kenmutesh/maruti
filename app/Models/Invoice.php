@@ -6,6 +6,7 @@ use App\Enums\DocumentLabelsEnum;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Support\Facades\Cache;
 
 class Invoice extends Model
 {
@@ -153,12 +154,27 @@ class Invoice extends Model
     }
   }
 
+  public function getCoatingjobMonetaryValuesAttribute(){
+    $invoiceID = $this->id;
+    return Cache::remember('coating_job_monetary_values_invoice_'.$this->id, (60 * 10), function () use($invoiceID) {
+      return CoatingJob::select('id', 'sum_subtotal', 'sum_vataddition', 'sum_grandtotal')
+          ->where('invoice_id', $invoiceID)
+          ->get();
+    });
+  }
+
   public function getSubTotalAttribute()
   {
-    $coatingJobs = CoatingJob::select('id', 'sum_subtotal')->where('invoice_id', $this->id)->get();
+    $coatingJobs = $this->coatingjob_monetary_values;
     $subTotal = 0;
     foreach ($coatingJobs as $coatingJob) {
-      $subTotal += $coatingJob->subtotal;
+      $subTotal += $coatingJob->sum_subtotal;
+    }
+
+    if($this->discount > 0){
+      $totalWithDiscount = $this->total - $this->discount;
+      $subTotalRatio = $subTotal/$this->total;
+      $subTotal = $subTotalRatio * $totalWithDiscount;
     }
 
     return round($subTotal, 2);
@@ -166,10 +182,16 @@ class Invoice extends Model
 
   public function getVatAdditionAttribute()
   {
-    $coatingJobs = CoatingJob::select('id', 'sum_vataddition')->where('invoice_id', $this->id)->get();
+    $coatingJobs = $this->coatingjob_monetary_values;
     $vat = 0;
     foreach ($coatingJobs as $coatingJob) {
-      $vat += $coatingJob->vataddition;
+      $vat += $coatingJob->sum_vataddition;
+    }
+
+    if($this->discount > 0){
+      $totalWithDiscount = $this->total - $this->discount;
+      $vatRatio = $vat/$this->total;
+      $vat = $vatRatio * $totalWithDiscount;
     }
 
     return $vat;
@@ -177,7 +199,7 @@ class Invoice extends Model
 
   public function getTotalAttribute()
   {
-    $coatingJobs = CoatingJob::select('id', 'sum_grandtotal')->where('invoice_id', $this->id)->get();
+    $coatingJobs = $this->coatingjob_monetary_values;;
     $total = 0;
     foreach ($coatingJobs as $coatingJob) {
       $total += $coatingJob->sum_grandtotal;

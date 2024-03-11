@@ -47,11 +47,6 @@ class Customer extends Model
     return $this->hasMany(Payment::class);
   }
 
-  public function creditnotes()
-  {
-    return $this->hasMany(SalesCreditNote::class);
-  }
-
   public function carboncopyemails()
   {
     return $this->hasMany(CustomerCCEmail::class);
@@ -65,24 +60,14 @@ class Customer extends Model
     }
 
     $invoiceResult = Cache::remember('single_day_invoices_' . $this->id . '_' . $carbonDateFormat, (60 * 3), function () use ($carbonDateFormat) {
-      $invoices = Invoice::select('id', 'customer_id')
+      $invoices = Invoice::select('id', 'customer_id', 'amount_due')
         ->where('customer_id', $this->id)
         ->whereDate('created_at', $carbonDateFormat)
         ->whereNull('cancelled_at');
       return $invoices->get();
     });
 
-    $amountDue = 0;
-
-    foreach ($invoiceResult as $invoice) {
-      $cacheName = 'invoice_payments_' . $invoice->id . '_' . $carbonDateFormat;
-
-      $paidAmount = Cache::remember($cacheName, (60 * 3), function () use ($carbonDateFormat, $invoice) {
-        return InvoicePayment::where('invoice_id', $invoice->id)->whereDate('created_at', $carbonDateFormat)->whereNull('nullified_at')->sum('amount_applied');
-      });
-
-      $amountDue += ($invoice->grand_total - floatval($paidAmount));
-    }
+    $amountDue = $invoiceResult->sum('amount_due');
 
     if (Carbon::parse($this->created_at)->diffInDays($carbonDateFormat) == 0) {
       $amountDue += $this->getOpeningBalanceAmountDue($carbonDateFormat);
@@ -110,7 +95,7 @@ class Customer extends Model
     $cacheName = 'period_invoices_' . $this->id . '_' . $dateTo . '_' . $dateFrom . '_' . $finalDate;
 
     $invoiceResult = Cache::remember($cacheName, (60 * 3), function () use ($dateTo, $dateFrom) {
-      $invoices = Invoice::select('id', 'customer_id')
+      $invoices = Invoice::select('id', 'customer_id', 'amount_due')
         ->where('customer_id', $this->id)
         ->whereBetween('created_at', [$dateTo, $dateFrom])
         ->whereNull('cancelled_at');
@@ -118,18 +103,7 @@ class Customer extends Model
       return $invoices->get();
     });
 
-    $amountDue = 0;
-
-    foreach ($invoiceResult as $invoice) {
-
-      $cacheName = 'period_invoice_payments_' . $invoice->id . '_' . $finalDate;
-
-      $paidAmount = Cache::remember($cacheName, (60 * 3), function () use ($finalDate, $invoice) {
-        return InvoicePayment::where('invoice_id', $invoice->id)->whereDate('created_at', '<=', $finalDate)->whereNull('nullified_at')->sum('amount_applied');
-      });
-
-      $amountDue += ($invoice->grand_total - floatval($paidAmount));
-    }
+    $amountDue = $invoiceResult->sum('amount_due');
 
     if (Carbon::parse($this->created_at)->diffInDays($finalDate, false) >= $from && Carbon::parse($this->created_at)->diffInDays($finalDate) < $to) {
       $amountDue += $this->getOpeningBalanceAmountDue($finalDate);
@@ -148,19 +122,14 @@ class Customer extends Model
     }
 
     $invoices = Cache::remember('single_day_over_invoices_' . $this->id . '_' . $dateFrom, (60 * 3), function () use ($dateFrom) {
-      $invoices = Invoice::select('id', 'customer_id')
+      $invoices = Invoice::select('id', 'customer_id', 'amount_due')
         ->where('customer_id', $this->id)
         ->whereDate('created_at', '<=', $dateFrom)
         ->whereNull('cancelled_at');
       return $invoices->get();
     });
 
-    $amountDue = 0;
-    foreach ($invoices as $invoice) {
-      $paidAmount = InvoicePayment::where('invoice_id', $invoice->id)->whereDate('created_at', '<=', $finalDate)->whereNull('nullified_at')->sum('amount_applied');
-
-      $amountDue += ($invoice->grand_total - floatval($paidAmount));
-    }
+    $amountDue = $invoices->sum('amount_due');
 
     if (Carbon::parse($this->created_at)->diffInDays($finalDate, false) >= 91) {
       $amountDue += $this->getOpeningBalanceAmountDue($finalDate);
@@ -215,35 +184,14 @@ class Customer extends Model
     $cacheName = 'invoices_amount_due'. $this->id .'_'. $dateTo;
 
     $invoices = Cache::remember($cacheName, (60 * 30), function () use($dateTo) {
-      return Invoice::select('id', 'customer_id', 'created_at')
-              ->with([
-                'coatingjobs:id,sum_grandtotal,invoice_id',
-                'invoicepayments' => function ($query) use($dateTo) {
-                  $query->whereDate('created_at', '<=', $dateTo);
-                }
-              ])
+      return Invoice::select('id', 'customer_id', 'created_at', 'amount_due')
               ->whereNull('cancelled_at')
               ->whereDate('created_at', '<=', $dateTo)
               ->orderBy('customer_id')
               ->get();
     });
 
-    $amountDue = 0;
-
-    foreach ($invoices as $invoice) {
-      $paymentsTotal = 0;
-      $invoiceTotal = 0;
-
-      foreach ($invoice->coatingjobs as $coatingjob) {
-        $invoiceTotal += $coatingjob->sum_grandtotal;
-      }
-
-      foreach ($invoice->invoicepayments as $invoicepayment) {
-        $paymentsTotal += $invoicepayment->amount_applied;
-      }
-
-      $amountDue += ($invoiceTotal - $paymentsTotal);
-    }
+    $amountDue = $invoices->sum('amount_due');
     
     return $amountDue;
   }

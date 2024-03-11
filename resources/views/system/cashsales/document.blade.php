@@ -51,7 +51,11 @@
       <h1 class="display-1" style="transform: rotate(45deg);">Cancelled</h1>
     </div>
     @endif
+    @if($cashsale->external)
+    <h3 class="text-center">EXT CASH SALE</h3>
+    @else
     <h3 class="text-center">CASH SALE</h3>
+    @endif
 
     <div class="row">
       <div class="col-sm-11 d-flex justify-content-between">

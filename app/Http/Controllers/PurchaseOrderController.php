@@ -202,6 +202,7 @@ class PurchaseOrderController extends Controller
       $this->updatePurchaseOrderItems($request, $purchaseorder);
       $this->updatePurchaseOrderDocuments($request);
       $this->createPurchaseOrderDocuments($request, $purchaseorder);
+      $purchaseorder->updateAmounts();
       return redirect('/purchaseorders')->with('Success', 'Edited succesfully');
     } else {
       return back()->withInput()->with('Error', 'Failed to edit. Please retry');

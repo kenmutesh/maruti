@@ -7,6 +7,7 @@ use App\Enums\DocumentLabelsEnum;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Support\Facades\Cache;
 
 class CashSale extends Model
 {
@@ -148,15 +149,28 @@ class CashSale extends Model
     }
   }
 
+  public function getCoatingjobMonetaryValuesAttribute()
+  {
+    $cashSaleID = $this->id;
+    return Cache::remember('coating_job_monetary_values_cash_sale_' . $this->id, (60 * 10), function () use ($cashSaleID) {
+      return CoatingJob::select('id', 'sum_subtotal', 'sum_vataddition', 'sum_grandtotal')
+        ->where('cash_sale_id', $cashSaleID)
+        ->get();
+    });
+  }
+
   public function getSubTotalAttribute()
   {
-    $coatingJobs = $this->coatingjobs;
+    $coatingJobs = $this->coatingjob_monetary_values;
     $subTotal = 0;
     foreach ($coatingJobs as $coatingJob) {
-      if ($coatingJob->status == CoatingJobStatusEnum::OPEN->value) {
-        continue;
-      }
-      $subTotal += $coatingJob->sub_total;
+      $subTotal += $coatingJob->sum_subtotal;
+    }
+
+    if ($this->discount > 0) {
+      $totalWithDiscount = $this->total - $this->discount;
+      $subTotalRatio = $subTotal / $this->total;
+      $subTotal = $subTotalRatio * $totalWithDiscount;
     }
 
     return round($subTotal, 2);
@@ -164,28 +178,27 @@ class CashSale extends Model
 
   public function getVatAdditionAttribute()
   {
-    $coatingJobs = $this->coatingjobs;
+    $coatingJobs = $this->coatingjob_monetary_values;
     $vat = 0;
     foreach ($coatingJobs as $coatingJob) {
-      if ($coatingJob->status == CoatingJobStatusEnum::OPEN->value) {
-        continue;
-      }
-      $vat += $coatingJob->vat_addition;
+      $vat += $coatingJob->sum_vataddition;
     }
 
-      return $vat;
+    if ($this->discount > 0) {
+      $totalWithDiscount = $this->total - $this->discount;
+      $vatRatio = $vat / $this->total;
+      $vat = $vatRatio * $totalWithDiscount;
+    }
 
+    return $vat;
   }
 
   public function getTotalAttribute()
   {
-    $coatingJobs = $this->coatingjobs;
+    $coatingJobs = $this->coatingjob_monetary_values;;
     $total = 0;
     foreach ($coatingJobs as $coatingJob) {
-      if ($coatingJob->status == CoatingJobStatusEnum::OPEN->value) {
-        continue;
-      }
-      $total += $coatingJob->grand_total;
+      $total += $coatingJob->sum_grandtotal;
     }
 
     return round($total, 2);

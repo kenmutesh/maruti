@@ -78,7 +78,7 @@
 
                                 <div class="col-sm-6">
                                     <label>Combine Other Job Cards</label>
-                                    <select class="form-control jobcard-select ms search-select" required name="combined_jobcards[]" multiple data-live-search="true" data-style="text-white">
+                                    <select class="form-control jobcard-select ms search-select" name="combined_jobcards[]" multiple data-live-search="true" data-style="text-white">
                                         <option disabled>Choose customer first</option>
                                         
                                     </select>

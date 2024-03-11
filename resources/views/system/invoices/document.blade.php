@@ -298,7 +298,13 @@
             @endforelse
           </tbody>
           <tfoot>
-           
+            @if($invoice->discount > 0)
+              <tr>
+                <td style="border:1px solid transparent;border-right:1px solid #ff6600;color:#000;text-align:center;padding:5px;" class="font-weight-bold"></td>
+                <td style="border:1px solid #ff6600;color:#000;text-align:center;padding:5px;" class="font-weight-bold" colspan="4">DISCOUNT</td>
+                <td style="border:1px solid #ff6600;color:#000;padding:5px;border-right:2px solid #ff6600;">{{ number_format($invoice->discount, 2) }}</td>
+              </tr>
+            @endif
             <tr>
               <td style="border:1px solid transparent;border-right:1px solid #ff6600;color:#000;text-align:center;padding:5px;border-top:1px solid #ff6600;" class="font-weight-bold"></td>
               <td style="border:1px solid #ff6600;color:#000;text-align:center;padding:5px;" class="font-weight-bold" colspan="4">SUB TOTAL</td>
@@ -309,13 +315,6 @@
               <td style="border:1px solid #ff6600;color:#000;text-align:center;padding:5px;" class="font-weight-bold" colspan="4">VAT</td>
               <td style="border:1px solid #ff6600;color:#000;padding:5px;border-right:2px solid #ff6600;">{{ number_format(($invoice->vat_addition), 2) }}</td>
             </tr>
-            @if($invoice->discount > 0)
-            <tr>
-              <td style="border:1px solid transparent;border-right:1px solid #ff6600;color:#000;text-align:center;padding:5px;" class="font-weight-bold"></td>
-              <td style="border:1px solid #ff6600;color:#000;text-align:center;padding:5px;" class="font-weight-bold" colspan="4">DISCOUNT</td>
-              <td style="border:1px solid #ff6600;color:#000;padding:5px;border-right:2px solid #ff6600;">{{ number_format($invoice->discount, 2) }}</td>
-            </tr>
-            @endif
             <tr>
               <td style="border:1px solid transparent;border-right:1px solid #ff6600;color:#000;text-align:center;padding:5px;" class="font-weight-bold"></td>
               <td style="border:1px solid #ff6600;color:#000;text-align:center;padding:5px;border-bottom:2px solid #ff6600;" class="font-weight-bold" colspan="4">GRAND TOTAL</td>
